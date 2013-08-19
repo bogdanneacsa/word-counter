@@ -20,7 +20,11 @@ function count_word_frequencies() {
 			  url : '/',
 			  data : {'input_text' : $('#text_input').val()},
 			  type : 'POST',
-			  success : update_view
+			  success : update_view,
+			  error: function() {
+			  		$("tbody").html("Could not parse any data.");
+			  		$('#text_submit_button').prop("disabled", false);
+			  }
 			});
 }
 
@@ -62,38 +66,40 @@ function create_frequency_container(frequency_value, parent_table, freq_flag) {
 function update_view(data) {
 	var word_frequencies = $.parseJSON(data);
 	$("tbody").html("");
-	// Use max and min frequency to somehow highligh the words with these
-	// frequencies
-	var max_frequency = word_frequencies[0][1];
-	var min_frequency = word_frequencies[word_frequencies.length - 1][1];
-	var current_frequency = null;	// The current frequency we are displaying
-	var current_parent = null;		// The current <td> element to which we are appending entries
-	var freq_flag = null;
- 	for (var i = 0; i < word_frequencies.length; i++) {
-		var entry = word_frequencies[i];
-		if (entry[1] != current_frequency) {
-			// We just switched from a frequency to a different one.
-			current_frequency = entry[1];
-			freq_flag = null; // Check if this is either min or max frequency.
-			if (entry[1] == max_frequency) {
-				freq_flag = FLAG_MAX;
-			} else {
-				if (entry[1] == min_frequency) {
-					freq_flag = FLAG_MIN;
+	if (word_frequencies.length > 0) {
+		// Use max and min frequency to somehow highligh the words with these
+		// frequencies
+		var max_frequency = word_frequencies[0][1];
+		var min_frequency = word_frequencies[word_frequencies.length - 1][1];
+		var current_frequency = null;	// The current frequency we are displaying
+		var current_parent = null;		// The current <td> element to which we are appending entries
+		var freq_flag = null;
+	 	for (var i = 0; i < word_frequencies.length; i++) {
+			var entry = word_frequencies[i];
+			if (entry[1] != current_frequency) {
+				// We just switched from a frequency to a different one.
+				current_frequency = entry[1];
+				freq_flag = null; // Check if this is either min or max frequency.
+				if (entry[1] == max_frequency) {
+					freq_flag = FLAG_MAX;
+				} else {
+					if (entry[1] == min_frequency) {
+						freq_flag = FLAG_MIN;
+					}
 				}
+				current_parent = create_frequency_container(entry[1], $("tbody")[0], freq_flag);
 			}
-			current_parent = create_frequency_container(entry[1], $("tbody")[0], freq_flag);
+			// Create a new span for each word so we can add some styling
+			var span = document.createElement('span');
+			var span_class = "word_span";
+			if (WORD_FREQ_CLASSES[freq_flag]) {
+				span_class += WORD_FREQ_CLASSES[freq_flag];
+			}
+			span.className = span_class;
+			span.innerHTML = entry[0] + ", ";
+			// Then just append element to result div.
+			current_parent.appendChild(span);
 		}
-		// Create a new span for each word so we can add some styling
-		var span = document.createElement('span');
-		var span_class = "word_span";
-		if (WORD_FREQ_CLASSES[freq_flag]) {
-			span_class += WORD_FREQ_CLASSES[freq_flag];
-		}
-		span.className = span_class;
-		span.innerHTML = entry[0] + ", ";
-		// Then just append element to result div.
-		current_parent.appendChild(span);
 	}
 	$('#text_submit_button').prop("disabled", false);
 }
